@@ -1,51 +1,60 @@
-/**
- * Plugin entry point for Usage Tracking.
- * Wires hooks for live usage snapshots.
- */
+import { Plugin } from "@opencode-ai/plugin"
+import { fetchUsageSnapshots, resolveProviderFilter } from "./usage"
+import { formatUsageStatus } from "./ui"
 
-import type { Plugin } from "@opencode-ai/plugin"
-import { commandHooks, sessionHooks, proxyHooks } from "./hooks"
-import { createUsageState } from "./state"
-import { loadUsageConfig } from "./usage/config"
-import type { UsageConfig } from "./types"
+const description = "Show API usage and rate limits (anthropic/codex/proxy/copilot/zai/openrouter)"
 
-export const UsagePlugin: Plugin = async ({ client }) => {
-  const state = createUsageState()
-
-  try {
-    const usageConfig = await loadUsageConfig().catch(() => ({} as UsageConfig))
-
-    state.availableProviders.codex = usageConfig?.providers?.openai !== false
-    state.availableProviders.proxy = usageConfig?.providers?.proxy !== false
-    state.availableProviders.copilot = usageConfig?.providers?.copilot !== false
-    state.availableProviders.anthropic = usageConfig?.providers?.anthropic !== false
-  } catch (err) {}
-
-  async function sendStatusMessage(sessionID: string, text: string): Promise<void> {
-    await client.session.prompt({
-      path: { id: sessionID },
-      body: {
-        noReply: true,
-        parts: [
-          {
-            type: "text",
-            text,
-            ignored: true,
-          },
-        ],
-      },
+export const UsagePlugin = Plugin.define({
+  id: "howaboua.usage",
+  setup: async (ctx) => {
+    await ctx.command.transform((commands) => {
+      commands.update("usage", (command) => {
+        command.description = description
+        command.template =
+          'Call the howaboua.usage tool with provider "$ARGUMENTS". Return the tool content verbatim without commentary.'
+      })
     })
-  }
 
-  const proxyHookHandlers = proxyHooks()
-  const commandHookHandlers = commandHooks({ client, state })
+    await ctx.tool.transform((tools) => {
+      tools.add({
+        name: "usage",
+        description,
+        input: {
+          type: "object",
+          properties: {
+            provider: {
+              type: "string",
+              description: "Optional provider name or alias, or support",
+            },
+          },
+          additionalProperties: false,
+        },
+        options: {
+          namespace: "howaboua",
+          codemode: false,
+        },
+        execute: async (input) => {
+          const value =
+            typeof input === "object" && input !== null
+              ? (input as Record<string, unknown>).provider
+              : undefined
+          const provider = typeof value === "string" ? value.trim() : ""
 
-  return {
-    config: commandHookHandlers.config,
-    "command.execute.before": commandHookHandlers["command.execute.before"],
-    ...sessionHooks(state),
-    ...proxyHookHandlers,
-  }
-}
+          if (provider.toLowerCase() === "support") {
+            return {
+              content: "▣ Support Mirrowel Proxy\n\nSupport our lord and savior: https://ko-fi.com/mirrowel",
+            }
+          }
+
+          const filter = resolveProviderFilter(provider)
+          const effectiveFilter = filter ? provider : undefined
+          const snapshots = await fetchUsageSnapshots(effectiveFilter)
+
+          return { content: formatUsageStatus(snapshots, effectiveFilter) }
+        },
+      })
+    })
+  },
+})
 
 export default UsagePlugin

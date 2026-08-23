@@ -1,45 +1,14 @@
 /**
  * Renders usage snapshots into readable status text.
- * Dispatches to specialized formatters and manages session messaging.
  */
 
-import type { PluginInput } from "@opencode-ai/plugin"
 import type { UsageSnapshot } from "../types"
-import type { UsageState } from "../state"
 import { formatProxySnapshot } from "./formatters/proxy"
 import { formatCopilotSnapshot } from "./formatters/copilot"
 import { formatZaiSnapshot } from "./formatters/zai"
 import { formatOpenRouterSnapshot } from "./formatters/openrouter"
 import { formatAnthropicSnapshot } from "./formatters/anthropic"
 import { formatBar, formatResetSuffix, formatMissingSnapshot } from "./formatters/shared"
-
-type UsageClient = PluginInput["client"]
-
-export async function sendStatusMessage(options: {
-  client: UsageClient
-  state: UsageState
-  sessionID: string
-  text: string
-}): Promise<void> {
-  const bus = (options.client as any).bus
-  if (bus) {
-    try {
-      await bus.publish({
-        topic: "companion.projection",
-        body: { key: "usage", kind: "markdown", content: options.text },
-      })
-    } catch {}
-  }
-
-  await options.client.session.prompt({
-    path: { id: options.sessionID },
-    body: { noReply: true, parts: [{ type: "text", text: options.text, ignored: true }] },
-  }).catch(async () => {
-    await options.client.tui.showToast({
-      body: { title: "Usage Status", message: options.text, variant: "info" },
-    }).catch(() => {})
-  })
-}
 
 function formatSnapshot(snapshot: UsageSnapshot): string[] {
   if (snapshot.isMissing) return formatMissingSnapshot(snapshot)
@@ -76,23 +45,17 @@ function formatSnapshot(snapshot: UsageSnapshot): string[] {
   return hasData ? lines : formatMissingSnapshot(snapshot)
 }
 
-export async function renderUsageStatus(options: {
-  client: UsageClient
-  state: UsageState
-  sessionID: string
-  snapshots: UsageSnapshot[]
-  filter?: string
-}): Promise<void> {
-  if (options.snapshots.length === 0) {
-    const filterMsg = options.filter ? ` for "${options.filter}"` : ""
-    return sendStatusMessage({ ...options, text: `▣ Usage | No data received${filterMsg}.` })
+export function formatUsageStatus(snapshots: UsageSnapshot[], filter?: string): string {
+  if (snapshots.length === 0) {
+    const filterMsg = filter ? ` for "${filter}"` : ""
+    return `▣ Usage | No data received${filterMsg}.`
   }
 
   const lines = ["▣ Usage Status", ""]
-  options.snapshots.forEach((s, i) => {
+  snapshots.forEach((s, i) => {
     lines.push(...formatSnapshot(s))
-    if (i < options.snapshots.length - 1) lines.push("", "---")
+    if (i < snapshots.length - 1) lines.push("", "---")
   })
 
-  await sendStatusMessage({ ...options, text: lines.join("\n") })
+  return lines.join("\n")
 }
