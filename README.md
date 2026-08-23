@@ -111,7 +111,7 @@ If missing, the plugin creates a default template on first run.
 /usage
 ```
 
-OpenCode V2 commands run a normal model turn. The command invokes the plugin's usage tool and asks the model to return its output verbatim. `/usage` shows integrations connected through OpenCode, not every provider in the catalog.
+In the OpenCode V2 TUI, `/usage` runs as a direct plugin command, so no model turn, planning, or tool trace is shown. It shows integrations connected through OpenCode, not every provider in the catalog. Clients without TUI plugin support use the server command fallback.
 
 ### Check specific provider
 
