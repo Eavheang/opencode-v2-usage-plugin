@@ -5,6 +5,12 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
     "dist",
     "README.md",
@@ -19,11 +25,11 @@
     "rate-limit"
   ],
   "license": "MIT",
-  "peerDependencies": {
-    "@opencode-ai/plugin": "^1.0.0"
+  "dependencies": {
+    "@opencode-ai/plugin": "0.0.0-beta-17963",
+    "zod": "^4.1.8"
   },
   "devDependencies": {
-    "@opencode-ai/plugin": "^1.0.0",
     "@types/bun": "^1.2.0",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
@@ -31,6 +37,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc",
+    "test": "bun test",
     "prepublishOnly": "npm run build",
     "publish:dev": "npm publish --tag dev",
     "release:dev": "npm version prerelease --preid dev && npm publish --tag dev"

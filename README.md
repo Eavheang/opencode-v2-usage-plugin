@@ -17,16 +17,24 @@ Track AI provider rate limits and quotas in real-time.
 
 ## Installation
 
-Add to your `opencode.json`:
+Install globally with OpenCode V2:
+
+```sh
+opencode2 plugin add @howaboua/opencode-usage-plugin
+```
+
+Or add it to your `opencode.json`:
 
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["@howaboua/opencode-usage-plugin"]
+  "plugins": ["@howaboua/opencode-usage-plugin"]
 }
 ```
 
 OpenCode installs dependencies automatically on next launch.
+
+> OpenCode V2 and its plugin API are currently beta. This release targets OpenCode `0.0.0-beta-17963`.
 
 ## Configuration
 
@@ -110,6 +118,8 @@ Copilot is detected from either of these locations:
 ```
 /usage
 ```
+
+OpenCode V2 commands run a normal model turn. The command invokes the plugin's usage tool and asks the model to return its output verbatim.
 
 ### Check specific provider
 

@@ -1,1 +1,1 @@
-export { renderUsageStatus, sendStatusMessage } from "./status"
+export { formatUsageStatus } from "./status"
