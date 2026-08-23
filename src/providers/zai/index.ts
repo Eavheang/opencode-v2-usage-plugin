@@ -11,9 +11,9 @@ export const ZaiProvider: UsageProvider<ZaiAuth> = {
   id: "zai-coding-plan",
   displayName: "Z.ai GLM Coding Plan",
 
-  async fetchUsage(auth: ZaiAuth): Promise<UsageSnapshot | null> {
+  async fetchUsage(auth: ZaiAuth, options): Promise<UsageSnapshot | null> {
     try {
-      const data = await fetchZaiUsage(auth)
+      const data = await fetchZaiUsage(auth, options?.signal)
 
       return {
         timestamp: Date.now(),

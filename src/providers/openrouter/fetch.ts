@@ -8,7 +8,10 @@ import {
   type OpenRouterAuthResponse,
 } from "./types"
 
-export async function fetchOpenRouterUsage(auth: OpenRouterAuth): Promise<OpenRouterAuthResponse> {
+export async function fetchOpenRouterUsage(
+  auth: OpenRouterAuth,
+  signal?: AbortSignal,
+): Promise<OpenRouterAuthResponse> {
   const urls = [
     "https://openrouter.ai/api/v1/key",
     "https://openrouter.ai/api/v1/auth/key",
@@ -21,7 +24,10 @@ export async function fetchOpenRouterUsage(auth: OpenRouterAuth): Promise<OpenRo
         "Authorization": `Bearer ${auth.key}`,
         "Content-Type": "application/json",
       },
+      signal,
     }).catch(() => null)
+
+    if (signal?.aborted) throw new Error("OpenRouter usage request aborted")
 
     if (!response) {
       lastError = `OpenRouter API failed: network error for ${url}`

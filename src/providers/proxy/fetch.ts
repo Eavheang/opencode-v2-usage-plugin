@@ -4,8 +4,9 @@
 
 import type { ProxyResponse } from "./types"
 import type { UsageConfig } from "../../types"
+import { linkAbortSignal } from "../../utils/abort"
 
-export async function fetchProxyLimits(config: UsageConfig): Promise<ProxyResponse> {
+export async function fetchProxyLimits(config: UsageConfig, signal?: AbortSignal): Promise<ProxyResponse> {
   const { endpoint, apiKey, timeout = 10000 } = config
 
   if (!endpoint) {
@@ -23,14 +24,14 @@ export async function fetchProxyLimits(config: UsageConfig): Promise<ProxyRespon
   const baseUrl = endpoint.endsWith("/v1") ? endpoint : `${endpoint}/v1`
   const url = `${baseUrl}/quota-stats`
 
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeout)
+  const linked = linkAbortSignal(signal)
+  const timeoutId = setTimeout(() => linked.abort(), timeout)
 
   try {
     const response = await fetch(url, {
       method: "GET",
       headers,
-      signal: controller.signal,
+      signal: linked.signal,
     })
 
     if (!response.ok) {
@@ -40,5 +41,6 @@ export async function fetchProxyLimits(config: UsageConfig): Promise<ProxyRespon
     return (await response.json()) as ProxyResponse
   } finally {
     clearTimeout(timeoutId)
+    linked.cleanup()
   }
 }

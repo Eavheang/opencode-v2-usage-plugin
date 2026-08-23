@@ -4,13 +4,13 @@
  */
 
 import type { UsageSnapshot } from "../../types"
-import { formatBar, formatResetSuffixISO, formatMissingSnapshot } from "./shared"
+import { formatBar, formatResetSuffixISO, formatMissingSnapshot, formatProviderHeading } from "./shared"
 
 export function formatCopilotSnapshot(snapshot: UsageSnapshot): string[] {
   const copilot = snapshot.copilotQuota
   if (!copilot) return formatMissingSnapshot(snapshot)
 
-  const lines = ["→ [GITHUB] Copilot"]
+  const lines = [`${formatProviderHeading(snapshot, "GitHub Copilot")} Copilot`]
   const reset = copilot.resetTime ? formatResetSuffixISO(copilot.resetTime) : ""
   const limitValue = copilot.limit === -1 ? -1 : Math.max(0, Math.floor(copilot.limit))
   const chatValue = limitValue === -1

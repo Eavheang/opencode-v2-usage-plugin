@@ -5,14 +5,20 @@ import {
   type AnthropicProfileResponse,
   type AnthropicUsageResponse,
 } from "./types.js"
+import { linkAbortSignal } from "../../utils/abort.js"
 
 const USAGE_ENDPOINT = "https://api.anthropic.com/api/oauth/usage"
 const PROFILE_ENDPOINT = "https://api.anthropic.com/api/oauth/profile"
 const REQUEST_TIMEOUT_MS = 5000
 
-async function fetchOAuthJson(url: string, token: string): Promise<unknown | null> {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+async function fetchOAuthJson(
+  url: string,
+  token: string,
+  signal?: AbortSignal,
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
+): Promise<unknown | null> {
+  const linked = linkAbortSignal(signal)
+  const timeout = setTimeout(() => linked.abort(), timeoutMs)
 
   try {
     const response = await fetch(url, {
@@ -20,7 +26,7 @@ async function fetchOAuthJson(url: string, token: string): Promise<unknown | nul
         Authorization: `Bearer ${token}`,
         ...oauthUsageHeaders,
       },
-      signal: controller.signal,
+      signal: linked.signal,
     })
 
     if (!response.ok) return null
@@ -29,19 +35,28 @@ async function fetchOAuthJson(url: string, token: string): Promise<unknown | nul
     return null
   } finally {
     clearTimeout(timeout)
+    linked.cleanup()
   }
 }
 
-export async function fetchAnthropicUsage(token: string): Promise<AnthropicUsageResponse | null> {
-  const data = await fetchOAuthJson(USAGE_ENDPOINT, token)
+export async function fetchAnthropicUsage(
+  token: string,
+  signal?: AbortSignal,
+  timeoutMs?: number,
+): Promise<AnthropicUsageResponse | null> {
+  const data = await fetchOAuthJson(USAGE_ENDPOINT, token, signal, timeoutMs)
   if (!data) return null
   const parsed = anthropicUsageResponseSchema.safeParse(data)
   if (!parsed.success) return null
   return parsed.data
 }
 
-export async function fetchAnthropicProfile(token: string): Promise<AnthropicProfileResponse | null> {
-  const data = await fetchOAuthJson(PROFILE_ENDPOINT, token)
+export async function fetchAnthropicProfile(
+  token: string,
+  signal?: AbortSignal,
+  timeoutMs?: number,
+): Promise<AnthropicProfileResponse | null> {
+  const data = await fetchOAuthJson(PROFILE_ENDPOINT, token, signal, timeoutMs)
   if (!data) return null
   const parsed = anthropicProfileResponseSchema.safeParse(data)
   if (!parsed.success) return null

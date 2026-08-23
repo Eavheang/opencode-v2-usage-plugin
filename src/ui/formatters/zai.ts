@@ -3,13 +3,13 @@
  */
 
 import type { UsageSnapshot } from "../../types"
-import { formatBar, formatMissingSnapshot, formatResetSuffix } from "./shared"
+import { formatBar, formatMissingSnapshot, formatProviderHeading, formatResetSuffix } from "./shared"
 
 export function formatZaiSnapshot(snapshot: UsageSnapshot): string[] {
   const zai = snapshot.zaiQuota
   if (!zai?.limits?.length) return formatMissingSnapshot(snapshot)
 
-  const lines = ["→ [Z.ai] GLM Coding Plan"]
+  const lines = [`${formatProviderHeading(snapshot, "Z.ai")} GLM Coding Plan`]
 
   for (const limit of zai.limits) {
     const isTokens = limit.type === "TOKENS_LIMIT"

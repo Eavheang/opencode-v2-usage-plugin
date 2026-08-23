@@ -290,10 +290,10 @@ export const ProxyProvider: UsageProvider<void> = {
   id: "proxy",
   displayName: "Mirrowel Proxy",
 
-  async fetchUsage(): Promise<UsageSnapshot | null> {
+  async fetchUsage(_auth, options): Promise<UsageSnapshot | null> {
     try {
       const config = await loadUsageConfig()
-      const data = await fetchProxyLimits(config)
+      const data = await fetchProxyLimits(config, options?.signal)
 
       return {
         timestamp: (data.timestamp || Date.now() / 1000) * 1000,

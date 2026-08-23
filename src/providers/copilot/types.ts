@@ -7,9 +7,10 @@
 export type CopilotTier = "free" | "pro" | "pro+" | "business" | "enterprise"
 
 export interface CopilotAuthData {
-  type: string
+  type?: string
   refresh?: string
   access?: string
+  key?: string
   expires?: number
 }
 

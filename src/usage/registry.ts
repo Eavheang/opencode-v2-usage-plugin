@@ -1,85 +1,119 @@
 /**
- * Resolves provider auth entries for usage snapshots.
+ * Maps OpenCode V2 integration credentials to usage-provider auth values.
  */
 
+import type { Credential } from "@opencode-ai/plugin"
+import { resolveAnthropicAuth } from "../providers/anthropic/auth"
+import type { AnthropicAuthData } from "../providers/anthropic/types"
 import type { CodexAuth } from "../providers/codex"
 import type { CopilotAuthData } from "../providers/copilot/types"
-import type { ZaiAuth } from "../providers/zai/types"
+import type { OpenCodeGoAuth } from "../providers/opencode-go"
 import type { OpenRouterAuth } from "../providers/openrouter/types"
+import type { ZaiAuth } from "../providers/zai/types"
 
-export type AuthEntry = {
-  type?: string
-  access?: string
-  refresh?: string
-  enterpriseUrl?: string
-  accountId?: string
-  key?: string
-}
-
-export type AuthRecord = Record<string, AuthEntry>
-
-type ProviderAuthEntry =
+export type SupportedProviderAuth =
   | { providerID: "codex"; auth: CodexAuth }
+  | { providerID: "anthropic"; auth: AnthropicAuthData }
   | { providerID: "copilot"; auth: CopilotAuthData }
   | { providerID: "zai-coding-plan"; auth: ZaiAuth }
   | { providerID: "openrouter"; auth: OpenRouterAuth }
+  | { providerID: "opencode-go"; auth: OpenCodeGoAuth }
 
-type ProviderDescriptor = {
-  id: ProviderAuthEntry["providerID"]
-  authKeys: string[]
-  requiresOAuth: boolean
-  buildAuth: (entry: AuthEntry, usageToken: string | null) => ProviderAuthEntry["auth"]
+export type IntegrationAuthResolution =
+  | { kind: "supported"; value: SupportedProviderAuth }
+  | { kind: "unsupported"; reason: string }
+
+const providerIDs: Record<string, string> = {
+  openai: "codex",
+  anthropic: "anthropic",
+  "github-copilot": "copilot",
+  zai: "zai-coding-plan",
+  "zai-coding-plan": "zai-coding-plan",
+  openrouter: "openrouter",
+  "opencode-go": "opencode-go",
 }
 
-const providerDescriptors: ProviderDescriptor[] = [
-  {
-    id: "codex",
-    authKeys: ["codex", "openai"],
-    requiresOAuth: true,
-    buildAuth: (entry) => ({
-      access: entry.access || entry.key,
-      accountId: entry.accountId,
-    }),
-  },
-  {
-    id: "copilot",
-    authKeys: ["copilot", "github-copilot"],
-    requiresOAuth: true,
-    buildAuth: (entry) => ({
-      access: entry.access,
-      refresh: entry.refresh,
-    }),
-  },
-  {
-    id: "zai-coding-plan",
-    authKeys: ["zai-coding-plan", "zai", "glm"],
-    requiresOAuth: false,
-    buildAuth: (entry) => ({
-      key: entry.key || entry.access || "",
-    }),
-  },
-  {
-    id: "openrouter",
-    authKeys: ["openrouter", "or"],
-    requiresOAuth: false,
-    buildAuth: (entry) => ({
-      key: entry.key || entry.access || "",
-    }),
-  },
-]
+export function providerIDForIntegration(integrationID: string): string | undefined {
+  return providerIDs[integrationID]
+}
 
-export function resolveProviderAuths(auths: AuthRecord, usageToken: string | null): ProviderAuthEntry[] {
-  const entries: ProviderAuthEntry[] = []
+export function resolveIntegrationAuth(
+  integrationID: string,
+  credential: Credential.Value,
+): IntegrationAuthResolution {
+  if (integrationID === "openai") {
+    if (credential.type !== "oauth") {
+      return { kind: "unsupported", reason: "OpenAI API keys do not expose ChatGPT plan usage." }
+    }
 
-  for (const descriptor of providerDescriptors) {
-    const matched = descriptor.authKeys.find((key) => Boolean(auths[key]))
-    if (!matched) continue
-    const auth = auths[matched]
-    if (!auth) continue
-    if (descriptor.requiresOAuth && auth.type && auth.type !== "oauth" && auth.type !== "token") continue
-    const built = descriptor.buildAuth(auth, usageToken)
-    entries.push({ providerID: descriptor.id, auth: built } as ProviderAuthEntry)
+    return {
+      kind: "supported",
+      value: {
+        providerID: "codex",
+        auth: {
+          access: credential.access,
+          accountId: readMetadataString(credential.metadata, "accountID", "accountId"),
+        },
+      },
+    }
   }
 
-  return entries
+  if (integrationID === "anthropic") {
+    const auth = resolveAnthropicAuth(credential)
+    if (!auth) {
+      return { kind: "unsupported", reason: "Anthropic API keys do not expose Claude subscription usage." }
+    }
+
+    return { kind: "supported", value: { providerID: "anthropic", auth } }
+  }
+
+  if (integrationID === "github-copilot") {
+    return {
+      kind: "supported",
+      value: {
+        providerID: "copilot",
+        auth:
+          credential.type === "oauth"
+            ? { type: credential.type, access: credential.access, refresh: credential.refresh }
+            : { type: credential.type, key: credential.key },
+      },
+    }
+  }
+
+  if (integrationID === "zai" || integrationID === "zai-coding-plan") {
+    if (credential.type !== "key") {
+      return { kind: "unsupported", reason: "Z.AI usage API requires an API key connection." }
+    }
+
+    return { kind: "supported", value: { providerID: "zai-coding-plan", auth: { key: credential.key } } }
+  }
+
+  if (integrationID === "openrouter") {
+    if (credential.type !== "key") {
+      return { kind: "unsupported", reason: "OpenRouter usage API requires an API key connection." }
+    }
+
+    return { kind: "supported", value: { providerID: "openrouter", auth: { key: credential.key } } }
+  }
+
+  if (integrationID === "opencode-go") {
+    if (credential.type !== "key") {
+      return { kind: "unsupported", reason: "OpenCode Go usage API requires an API key connection." }
+    }
+
+    return { kind: "supported", value: { providerID: "opencode-go", auth: { key: credential.key } } }
+  }
+
+  return {
+    kind: "unsupported",
+    reason: "OpenCode does not expose a universal usage API for this integration.",
+  }
+}
+
+function readMetadataString(metadata: Record<string, unknown> | undefined, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = metadata?.[key]
+    if (typeof value === "string" && value) return value
+  }
+  return undefined
 }

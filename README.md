@@ -11,7 +11,7 @@ Track AI provider rate limits and quotas in real-time.
 - **Z.ai usage** – Track GLM Coding Plan 5-hour token quota and monthly tool quota
 - **OpenRouter usage** – Track API credit usage and remaining balance
 - **Inline status** – Results appear directly in your chat, no context switching
-- **Zero setup** – Auto-detects providers from your existing config
+- **OpenCode V2 auth** – Discovers every connected integration and resolves credentials through OpenCode
 
 <img width="1300" height="900" alt="image" src="https://github.com/user-attachments/assets/cd49e450-f4b6-4314-b236-b3a92bffdb88" />
 
@@ -103,14 +103,6 @@ The `modelGroups` section controls how quota groups are displayed:
 
 If missing, the plugin creates a default template on first run.
 
-### Copilot auth
-
-Copilot is detected from either of these locations:
-
-- `~/.local/share/opencode/copilot-usage-token.json`
-- `~/.local/share/opencode/auth.json` with a `github-copilot` entry
-- `~/.config/opencode/copilot-quota-token.json` (optional override)
-
 ## Usage
 
 ### Check all providers
@@ -119,7 +111,7 @@ Copilot is detected from either of these locations:
 /usage
 ```
 
-OpenCode V2 commands run a normal model turn. The command invokes the plugin's usage tool and asks the model to return its output verbatim.
+In the OpenCode V2 TUI, `/usage` runs as a direct plugin command, so no model turn, planning, or tool trace is shown. It shows integrations connected through OpenCode, not every provider in the catalog. Clients without TUI plugin support use the server command fallback.
 
 ### Check specific provider
 
@@ -151,6 +143,9 @@ OpenCode V2 commands run a normal model turn. The command invokes the plugin's u
 | **GitHub Copilot** | GitHub internal usage APIs |
 | **Z.ai GLM Coding Plan** | `chat.z.ai` auth + Z.ai usage APIs |
 | **OpenRouter** | API key + `openrouter.ai/api/v1/key` |
+| **OpenCode Go** | API key + `opencode.ai/zen/go/v1/usage` |
+
+Connected integrations without a public usage endpoint remain visible as `Usage API unavailable`. OpenCode Zen currently has no public balance or usage endpoint. OpenCode does not provide one universal usage endpoint for arbitrary integrations.
 
 ## Troubleshooting
 
@@ -161,12 +156,11 @@ OpenCode V2 commands run a normal model turn. The command invokes the plugin's u
 - Verify your proxy is running at the specified endpoint
 
 **Missing provider data**
-- Use `providers: { ... }` in config to disable unused providers
-- For Codex: Ensure you have valid auth tokens
-- For Copilot: Check token file locations in Configuration section above
-- For Z.ai: Ensure your OpenCode auth includes `chat.z.ai` credentials
-- For Anthropic: Ensure Claude OAuth credentials are available (`anthropic` in auth.json)
-- For OpenRouter: Ensure OpenRouter API key is available (`openrouter` or `or` in auth.json)
+- Use `providers: { ... }` in config to disable connected integrations
+- Connect supported services with OpenCode V2 `/connect`
+- OpenAI usage requires ChatGPT OAuth, not an OpenAI API key
+- Anthropic usage requires Claude OAuth; Anthropic API keys do not expose subscription usage
+- Other connected services may show unavailable until their provider exposes a quota API
 
 **Config file not found**
 - The plugin auto-creates `usage-config.jsonc` on first run

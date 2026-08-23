@@ -4,7 +4,7 @@
  */
 
 import type { UsageSnapshot } from "../../types"
-import { formatBar, formatResetSuffixISO, formatMissingSnapshot } from "./shared"
+import { formatBar, formatResetSuffixISO, formatMissingSnapshot, formatProviderHeading } from "./shared"
 
 type ProxyProviderView = NonNullable<UsageSnapshot["proxyQuota"]>["providers"][number]
 type ProxyTierView = ProxyProviderView["tiers"][number]
@@ -14,7 +14,7 @@ export function formatProxySnapshot(snapshot: UsageSnapshot): string[] {
   const proxy = snapshot.proxyQuota
   if (!proxy?.providers?.length) return formatMissingSnapshot(snapshot)
 
-  const lines = ["→ [Google] Mirrowel Proxy"]
+  const lines = [`${formatProviderHeading(snapshot, "Mirrowel Proxy")} Mirrowel Proxy`]
 
   for (const provider of proxy.providers) {
     const providerLines = formatProxyProvider(provider)

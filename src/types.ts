@@ -75,6 +75,7 @@ export interface UsageConfig {
   zaiEndpoint?: string
   timeout?: number
   providers?: {
+    [provider: string]: boolean | undefined
     openai?: boolean
     proxy?: boolean
     copilot?: boolean
@@ -131,6 +132,18 @@ export interface AnthropicQuota {
   } | null
 }
 
+export interface OpenCodeGoWindow {
+  status: "ok" | "rate-limited"
+  percent: number
+  resetsAt: string
+}
+
+export interface OpenCodeGoQuota {
+  rolling: OpenCodeGoWindow
+  weekly: OpenCodeGoWindow
+  monthly: OpenCodeGoWindow
+}
+
 export interface OpenRouterQuota {
   limit: number | null
   usage: number
@@ -154,8 +167,14 @@ export interface UsageSnapshot {
   zaiQuota?: ZaiQuota
   openrouterQuota?: OpenRouterQuota
   anthropicQuota?: AnthropicQuota
+  opencodeGoQuota?: OpenCodeGoQuota
+  integrationID?: string
+  displayName?: string
+  connectionID?: string
+  connectionLabel?: string
   updatedAt: number
   isMissing?: boolean
+  missingKind?: "unsupported" | "unavailable"
   missingReason?: string
   missingDetails?: string[]
 }
