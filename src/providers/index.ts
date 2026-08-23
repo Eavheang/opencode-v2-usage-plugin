@@ -5,6 +5,7 @@ import { CopilotProvider } from "./copilot"
 import { ZaiProvider } from "./zai"
 import { OpenRouterProvider } from "./openrouter"
 import { AnthropicProvider } from "./anthropic"
+import { OpenCodeGoProvider } from "./opencode-go"
 
 export const providers: Record<string, UsageProvider<unknown>> = {
   [CodexProvider.id]: CodexProvider as UsageProvider<unknown>,
@@ -13,6 +14,7 @@ export const providers: Record<string, UsageProvider<unknown>> = {
   [ZaiProvider.id]: ZaiProvider as UsageProvider<unknown>,
   [OpenRouterProvider.id]: OpenRouterProvider as UsageProvider<unknown>,
   [AnthropicProvider.id]: AnthropicProvider as UsageProvider<unknown>,
+  [OpenCodeGoProvider.id]: OpenCodeGoProvider as UsageProvider<unknown>,
 }
 
 export { CodexProvider } from "./codex"
@@ -21,4 +23,5 @@ export { CopilotProvider } from "./copilot"
 export { ZaiProvider } from "./zai"
 export { OpenRouterProvider } from "./openrouter"
 export { AnthropicProvider } from "./anthropic"
+export { OpenCodeGoProvider } from "./opencode-go"
 export type { UsageProvider } from "./base"

@@ -61,13 +61,27 @@ export function formatMissingSnapshot(snapshot: UsageSnapshot): string[] {
     openrouter: "if you are not using OpenRouter API keys, please set your usage-config.jsonc to openrouter: false",
   }
 
-  const lines = [`→ [${provider.toUpperCase()}] - ${instructions[provider] || ""}`]
+  const label = snapshot.displayName || provider
+  const connection = snapshot.connectionLabel ? ` (${snapshot.connectionLabel})` : ""
+  const instruction = snapshot.integrationID
+    ? snapshot.missingKind === "unsupported"
+      ? "OpenCode has this connection, but no compatible usage API is available."
+      : "OpenCode could not retrieve usage for this connection."
+    : instructions[provider] || "Usage data is unavailable for this provider."
+  const lines = [`→ [${label.toUpperCase()}]${connection} - ${instruction}`]
   if (snapshot.missingReason) lines.push("", `Reason: ${snapshot.missingReason}`)
   if (snapshot.missingDetails?.length) {
     lines.push("", "Details:", ...snapshot.missingDetails.map((d: string) => `- ${d}`))
   }
 
-  return [...lines, "", `File: ${configPath}`, "", "Issue? https://github.com/IgorWarzocha/opencode-usage-plugin/issues"]
+  if (!snapshot.integrationID) lines.push("", `File: ${configPath}`)
+  return [...lines, "", "Issue? https://github.com/IgorWarzocha/opencode-usage-plugin/issues"]
+}
+
+export function formatProviderHeading(snapshot: UsageSnapshot, fallback: string): string {
+  const label = snapshot.displayName || fallback
+  const connection = snapshot.connectionLabel ? ` (${snapshot.connectionLabel})` : ""
+  return `→ [${label.toUpperCase()}]${connection}`
 }
 
 function getConfigPath() {

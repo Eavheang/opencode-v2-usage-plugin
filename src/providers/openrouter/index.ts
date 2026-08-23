@@ -25,10 +25,10 @@ export const OpenRouterProvider: UsageProvider<OpenRouterAuth> = {
   id: "openrouter",
   displayName: "OpenRouter",
 
-  async fetchUsage(auth: OpenRouterAuth): Promise<UsageSnapshot | null> {
+  async fetchUsage(auth: OpenRouterAuth, options): Promise<UsageSnapshot | null> {
     try {
       if (!auth?.key) return null
-      const data = await fetchOpenRouterUsage(auth)
+       const data = await fetchOpenRouterUsage(auth, options?.signal)
       const now = Date.now()
 
       return {

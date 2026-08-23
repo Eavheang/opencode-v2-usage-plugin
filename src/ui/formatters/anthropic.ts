@@ -1,5 +1,5 @@
 import type { UsageSnapshot } from "../../types"
-import { formatBar, formatMissingSnapshot, formatResetSuffixISO } from "./shared"
+import { formatBar, formatMissingSnapshot, formatProviderHeading, formatResetSuffixISO } from "./shared"
 
 function toTitleCase(value: string): string {
   return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
@@ -59,7 +59,7 @@ export function formatAnthropicSnapshot(snapshot: UsageSnapshot): string[] {
   if (!quota) return formatMissingSnapshot(snapshot)
 
   const plan = snapshot.planType ? ` (${toTitleCase(snapshot.planType)})` : ""
-  const lines = [`→ [ANTHROPIC]${plan}`]
+  const lines = [`${formatProviderHeading(snapshot, "Anthropic")}${plan}`]
 
   const tierLabel = formatTierLabel(quota.subscription?.rateLimitTier)
   if (shouldShowTier(snapshot.planType, tierLabel)) {

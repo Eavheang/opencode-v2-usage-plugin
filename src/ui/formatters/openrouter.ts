@@ -3,13 +3,13 @@
  */
 
 import type { UsageSnapshot } from "../../types"
-import { formatBar, formatMissingSnapshot, formatResetSuffix } from "./shared"
+import { formatBar, formatMissingSnapshot, formatProviderHeading, formatResetSuffix } from "./shared"
 
 export function formatOpenRouterSnapshot(snapshot: UsageSnapshot): string[] {
   const or = snapshot.openrouterQuota
   if (!or) return formatMissingSnapshot(snapshot)
 
-  const lines = ["→ [OPENROUTER]"]
+  const lines = [formatProviderHeading(snapshot, "OpenRouter")]
 
   if (or.limit === null) {
     lines.push(`  ${"Credit:".padEnd(13)} Unlimited`)

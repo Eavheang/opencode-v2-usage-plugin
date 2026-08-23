@@ -1,21 +1,20 @@
 import type { UsageProvider } from "../base.js"
 import type { UsageSnapshot } from "../../types.js"
-import { readAnthropicAuth } from "./auth.js"
 import { fetchAnthropicProfile, fetchAnthropicUsage } from "./fetch.js"
 import { buildAnthropicQuota, inferAnthropicPlanType } from "./parse.js"
+import type { AnthropicAuthData } from "./types.js"
 
-export const AnthropicProvider: UsageProvider<void> = {
+export const AnthropicProvider: UsageProvider<AnthropicAuthData> = {
   id: "anthropic",
   displayName: "Anthropic Claude",
   usageEndpoint: "https://api.anthropic.com/api/oauth/usage",
 
-  async fetchUsage(): Promise<UsageSnapshot | null> {
-    const auth = await readAnthropicAuth()
+  async fetchUsage(auth, options): Promise<UsageSnapshot | null> {
     if (!auth?.access) return null
 
     const [usage, profile] = await Promise.all([
-      fetchAnthropicUsage(auth.access),
-      fetchAnthropicProfile(auth.access),
+      fetchAnthropicUsage(auth.access, options?.signal, options?.timeoutMs),
+      fetchAnthropicProfile(auth.access, options?.signal, options?.timeoutMs),
     ])
 
     if (!usage) return null

@@ -35,7 +35,7 @@ export const CodexProvider: UsageProvider<CodexAuth> = {
     }
   },
 
-  fetchUsage: async (auth) => {
+  fetchUsage: async (auth, options) => {
     const accessToken = auth.access
     if (!accessToken) return null
     const response = await fetch("https://chatgpt.com/backend-api/wham/usage", {
@@ -43,6 +43,7 @@ export const CodexProvider: UsageProvider<CodexAuth> = {
         Authorization: `Bearer ${accessToken}`,
         ...(auth.accountId ? { "ChatGPT-Account-Id": auth.accountId } : {}),
       },
+      signal: options?.signal,
     }).catch(() => null)
     if (!response?.ok) return null
     const data = await response.json().catch(() => null)

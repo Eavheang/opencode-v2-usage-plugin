@@ -2,7 +2,7 @@ import { Plugin } from "@opencode-ai/plugin"
 import { fetchUsageSnapshots, resolveProviderFilter } from "./usage"
 import { formatUsageStatus } from "./ui"
 
-const description = "Show API usage and rate limits (anthropic/codex/proxy/copilot/zai/openrouter)"
+const description = "Show usage and rate limits for OpenCode-connected services"
 
 export const UsagePlugin = Plugin.define({
   id: "howaboua.usage",
@@ -11,7 +11,7 @@ export const UsagePlugin = Plugin.define({
       commands.update("usage", (command) => {
         command.description = description
         command.template =
-          'Call the howaboua.usage tool with provider "$ARGUMENTS". Return the tool content verbatim without commentary.'
+          'Call the howaboua.usage tool. If a provider argument is present, pass it as provider; otherwise omit provider. Return the tool content verbatim without commentary. Arguments: $ARGUMENTS'
       })
     })
 
@@ -46,9 +46,8 @@ export const UsagePlugin = Plugin.define({
             }
           }
 
-          const filter = resolveProviderFilter(provider)
-          const effectiveFilter = filter ? provider : undefined
-          const snapshots = await fetchUsageSnapshots(effectiveFilter)
+          const effectiveFilter = resolveProviderFilter(provider)
+          const snapshots = await fetchUsageSnapshots(ctx.integration, effectiveFilter)
 
           return { content: formatUsageStatus(snapshots, effectiveFilter) }
         },

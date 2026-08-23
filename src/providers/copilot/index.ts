@@ -5,11 +5,12 @@
 
 import type { UsageProvider } from "../base.js"
 import type { UsageSnapshot, CopilotQuota } from "../../types.js"
-import { readCopilotAuth } from "./auth.js"
 import {
   toCopilotQuotaFromInternal,
   type CopilotInternalUserResponse,
 } from "./response.js"
+import type { CopilotAuthData } from "./types.js"
+import { linkAbortSignal } from "../../utils/abort.js"
 
 const GITHUB_API_BASE_URL = "https://api.github.com"
 const COPILOT_INTERNAL_USER_URL = `${GITHUB_API_BASE_URL}/copilot_internal/user`
@@ -33,21 +34,27 @@ async function fetchWithTimeout(
   url: string,
   options: RequestInit,
   timeoutMs: number = REQUEST_TIMEOUT_MS,
+  signal?: AbortSignal,
 ): Promise<Response> {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  const linked = linkAbortSignal(signal)
+  const timeoutId = setTimeout(() => linked.abort(), timeoutMs)
 
   try {
     return await fetch(url, {
       ...options,
-      signal: controller.signal,
+      signal: linked.signal,
     })
   } finally {
     clearTimeout(timeoutId)
+    linked.cleanup()
   }
 }
 
-async function exchangeForCopilotToken(oauthToken: string): Promise<string | null> {
+async function exchangeForCopilotToken(
+  oauthToken: string,
+  signal?: AbortSignal,
+  timeoutMs?: number,
+): Promise<string | null> {
   try {
     const response = await fetchWithTimeout(COPILOT_TOKEN_EXCHANGE_URL, {
       headers: {
@@ -55,7 +62,7 @@ async function exchangeForCopilotToken(oauthToken: string): Promise<string | nul
         Authorization: `Bearer ${oauthToken}`,
         ...COPILOT_HEADERS,
       },
-    })
+    }, timeoutMs, signal)
 
     if (!response.ok) return null
     const data = (await response.json()) as { token: string }
@@ -65,16 +72,15 @@ async function exchangeForCopilotToken(oauthToken: string): Promise<string | nul
   }
 }
 
-export const CopilotProvider: UsageProvider<void> = {
+export const CopilotProvider: UsageProvider<CopilotAuthData> = {
   id: "copilot",
   displayName: "GitHub Copilot",
 
-  async fetchUsage(): Promise<UsageSnapshot | null> {
+  async fetchUsage(auth, options): Promise<UsageSnapshot | null> {
     const now = Date.now()
     let quota: CopilotQuota | null = null
 
-    const auth = await readCopilotAuth()
-    const oauthToken = auth?.refresh || auth?.access
+    const oauthToken = auth?.refresh || auth?.access || auth?.key
     if (oauthToken) {
       try {
         let resp = await fetchWithTimeout(COPILOT_INTERNAL_USER_URL, {
@@ -83,10 +89,10 @@ export const CopilotProvider: UsageProvider<void> = {
             Authorization: `token ${oauthToken}`,
             ...COPILOT_HEADERS,
           },
-        })
+        }, options?.timeoutMs, options?.signal)
 
         if (!resp.ok) {
-          const copilotToken = await exchangeForCopilotToken(oauthToken)
+          const copilotToken = await exchangeForCopilotToken(oauthToken, options?.signal, options?.timeoutMs)
           if (copilotToken) {
             resp = await fetchWithTimeout(COPILOT_INTERNAL_USER_URL, {
               headers: {
@@ -94,7 +100,7 @@ export const CopilotProvider: UsageProvider<void> = {
                 Authorization: `Bearer ${copilotToken}`,
                 ...COPILOT_HEADERS,
               },
-            })
+            }, options?.timeoutMs, options?.signal)
           }
         }
 

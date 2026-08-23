@@ -5,7 +5,7 @@
 import { loadUsageConfig } from "../../usage/config"
 import type { ZaiAuth, ZaiQuotaResponse, ZaiModelUsageResponse, ZaiToolUsageResponse } from "./types"
 
-export async function fetchZaiUsage(auth: ZaiAuth) {
+export async function fetchZaiUsage(auth: ZaiAuth, signal?: AbortSignal) {
   const config = await loadUsageConfig().catch(() => null)
   const baseUrl = config?.zaiEndpoint?.replace(/\/$/, "") || "https://api.z.ai"
   const monitorUrl = `${baseUrl}/api/monitor/usage`
@@ -31,9 +31,9 @@ export async function fetchZaiUsage(auth: ZaiAuth) {
   }
 
   const [quotaRes, modelRes, toolRes] = await Promise.all([
-    fetch(`${monitorUrl}/quota/limit`, { headers }),
-    fetch(`${monitorUrl}/model-usage${queryParams}`, { headers }),
-    fetch(`${monitorUrl}/tool-usage${queryParams}`, { headers }),
+    fetch(`${monitorUrl}/quota/limit`, { headers, signal }),
+    fetch(`${monitorUrl}/model-usage${queryParams}`, { headers, signal }),
+    fetch(`${monitorUrl}/tool-usage${queryParams}`, { headers, signal }),
   ])
 
   if (!quotaRes.ok) {

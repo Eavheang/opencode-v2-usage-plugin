@@ -8,7 +8,8 @@ import { formatCopilotSnapshot } from "./formatters/copilot"
 import { formatZaiSnapshot } from "./formatters/zai"
 import { formatOpenRouterSnapshot } from "./formatters/openrouter"
 import { formatAnthropicSnapshot } from "./formatters/anthropic"
-import { formatBar, formatResetSuffix, formatMissingSnapshot } from "./formatters/shared"
+import { formatOpenCodeGoSnapshot } from "./formatters/opencode-go"
+import { formatBar, formatProviderHeading, formatResetSuffix, formatMissingSnapshot } from "./formatters/shared"
 
 function formatSnapshot(snapshot: UsageSnapshot): string[] {
   if (snapshot.isMissing) return formatMissingSnapshot(snapshot)
@@ -17,10 +18,10 @@ function formatSnapshot(snapshot: UsageSnapshot): string[] {
   if (snapshot.provider === "zai-coding-plan") return formatZaiSnapshot(snapshot)
   if (snapshot.provider === "openrouter") return formatOpenRouterSnapshot(snapshot)
   if (snapshot.provider === "anthropic") return formatAnthropicSnapshot(snapshot)
-  if (snapshot.provider === "openrouter") return formatOpenRouterSnapshot(snapshot)
+  if (snapshot.provider === "opencode-go") return formatOpenCodeGoSnapshot(snapshot)
 
   const plan = snapshot.planType ? ` (${snapshot.planType.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())})` : ""
-  const lines = [`→ [${snapshot.provider.toUpperCase()}]${plan}`]
+  const lines = [`${formatProviderHeading(snapshot, snapshot.provider)}${plan}`]
 
   const metrics = [
     { label: "Hourly:", data: snapshot.primary },
@@ -48,7 +49,7 @@ function formatSnapshot(snapshot: UsageSnapshot): string[] {
 export function formatUsageStatus(snapshots: UsageSnapshot[], filter?: string): string {
   if (snapshots.length === 0) {
     const filterMsg = filter ? ` for "${filter}"` : ""
-    return `▣ Usage | No data received${filterMsg}.`
+    return filter ? `▣ Usage | No data received${filterMsg}.` : "▣ Usage | No connected OpenCode services."
   }
 
   const lines = ["▣ Usage Status", ""]
