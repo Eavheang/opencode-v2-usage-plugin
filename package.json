@@ -40,9 +40,9 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc",
+    "build": "bun run clean && tsc",
     "test": "bun test",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "bun run build",
     "publish:dev": "npm publish --tag dev",
     "release:dev": "npm version prerelease --preid dev && npm publish --tag dev"
   },

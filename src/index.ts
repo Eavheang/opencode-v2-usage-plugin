@@ -37,14 +37,6 @@ export const UsagePlugin = Plugin.define({
       }
     })().catch(() => {})
 
-    await ctx.command.transform((commands) => {
-      commands.update("usage", (command) => {
-        command.description = description
-        command.template =
-          'Call the howaboua.usage tool. If a provider argument is present, pass it as provider; otherwise omit provider. Return the tool content verbatim without commentary. Arguments: $ARGUMENTS'
-      })
-    })
-
     await ctx.tool.transform((tools) => {
       tools.add({
         name: "usage",
