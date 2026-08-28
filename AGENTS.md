@@ -6,7 +6,7 @@ OpenCode plugin for tracking AI provider usage, rate limits, and quotas.
 
 ## Dev Flow
 - `tsc --noEmit` - MUST use for type-checking before any commit.
-- `npm run build` - Compiles project to `dist/`.
+- `bun run build` - Compiles project to `dist/`.
 - `? RECOMMENDATION`: Implement a one-shot test command (e.g., `bun test` or `vitest`).
 
 <rules>

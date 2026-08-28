@@ -17,7 +17,7 @@ This plugin stays intentionally small. Keep changes minimal, predictable, and co
 3. Follow existing module structure and file split.
 4. Run checks locally:
    - `tsc --noEmit`
-   - `npm run build`
+   - `bun run build`
 5. Re-sync with `master` before final review request.
 
 ## Provider implementation rules
@@ -50,6 +50,6 @@ When adding/changing a provider under `src/providers/<name>/`:
 - [ ] No logging/debug leftovers
 - [ ] API payload validation present
 - [ ] Type-check passes (`tsc --noEmit`)
-- [ ] Build passes (`npm run build`)
+- [ ] Build passes (`bun run build`)
 - [ ] Provider is wired through config, registry, fetch, and status output
 - [ ] PR is conflict-free against latest `master`
